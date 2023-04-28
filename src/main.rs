@@ -37,7 +37,15 @@ mod mac {
         Namespace {
             key: "mac",
             description: "actions to setup a macos device",
-            tasks: vec![brew(), comms(), tech(), neovim(), asdf(), browsers()],
+            tasks: vec![
+                brew(),
+                comms(),
+                tech(),
+                neovim(),
+                asdf(),
+                browsers(),
+                apps(),
+            ],
         }
     }
 
@@ -54,7 +62,7 @@ mod mac {
 
     fn comms() -> Task {
         Task {
-            key: "brew comms",
+            key: "comms",
             actions: vec![
                 Action::Command(brew_install("slack")),
                 Action::Command(brew_install("discord")),
@@ -68,7 +76,7 @@ mod mac {
 
     fn tech() -> Task {
         Task {
-            key: "brew tech",
+            key: "tech",
             actions: vec![
                 Action::Command(brew_install("font-fira-code-nerd-font")),
                 Action::Command(brew_install("starship")),
@@ -124,14 +132,13 @@ mod mac {
 
     fn apps() -> Task {
         Task {
-            key: "browsers",
+            key: "apps",
             actions: vec![
                 Action::Command(brew_install("spotify")),
                 Action::Command(brew_install("obsidian")),
                 Action::Command(brew_install("bitwarden")),
             ],
         }
-
     }
 
     fn asdf_plugin_add(arg: &str) -> Vec<&str> {
@@ -207,6 +214,7 @@ impl Namespace {
         clap::Command::new(self.key)
             .subcommand_required(true)
             .subcommands(subs)
+            .about(self.description)
     }
 
     fn run(&self, arg_matches: &clap::ArgMatches) {
@@ -232,7 +240,18 @@ impl Task {
     }
 
     fn to_clap_subcommand(&self) -> clap::Command {
-        clap::Command::new(self.key)
+        clap::Command::new(self.key).about(self.about())
+    }
+
+    fn about(&self) -> String {
+        let init = String::from("runs the following commands:\n");
+        let mut about = self.actions.iter().fold(init, |mut acc, e| {
+            let s = format!("\n{}", e.about());
+            acc.push_str(&s);
+            acc
+        });
+        about.push_str("\n");
+        about
     }
 }
 
@@ -254,6 +273,13 @@ impl Action {
                     .output()
                     .expect("command should be a valid command and not error");
             }
+        }
+    }
+
+    fn about(&self) -> String {
+        match self {
+            Action::Task(_) => todo!(),
+            Action::Command(v) => v.join(" "),
         }
     }
 }
