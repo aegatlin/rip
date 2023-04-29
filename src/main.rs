@@ -37,157 +37,13 @@ impl App {
     }
 }
 
-mod mac {
-    use directories::UserDirs;
+mod mac;
 
-    use crate::{Action, Namespace, Task};
-
-    pub fn namespace() -> Namespace {
-        Namespace {
-            key: "mac",
-            description: "actions to setup a macos device",
-            tasks: vec![
-                brew(),
-                comms(),
-                tech(),
-                neovim(),
-                asdf(),
-                browsers(),
-                apps(),
-            ],
-        }
-    }
-
-    fn brew() -> Task {
-        Task {
-            key: "brew",
-            actions: vec![Action::Command(vec![
-                "/bin/bash",
-                "-c",
-                "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)",
-            ])],
-        }
-    }
-
-    fn comms() -> Task {
-        Task {
-            key: "comms",
-            actions: vec![
-                Action::Command(brew_install("slack")),
-                Action::Command(brew_install("discord")),
-                Action::Command(brew_install("signal")),
-                Action::Command(brew_install("telegram")),
-                Action::Command(brew_install("whatsapp")),
-                Action::Command(brew_install("zoom")),
-            ],
-        }
-    }
-
-    fn tech() -> Task {
-        Task {
-            key: "tech",
-            actions: vec![
-                Action::Task(starship()),
-                Action::Task(font_fira_code_nerd_font()),
-                Action::Command(brew_install("visual-studio-code")),
-                Action::Command(brew_install("lazygit")),
-                Action::Command(brew_install("lazydocker")),
-                Action::Command(brew_install("asdf")),
-                Action::Command(brew_install("git")),
-                Action::Command(brew_install("gh")),
-                Action::Command(brew_install("tree")),
-                Action::Command(brew_install("docker")),
-                Action::Command(brew_install("wireshark")),
-                Action::Command(brew_install("redis")),
-            ],
-        }
-    }
-
-    fn neovim() -> Task {
-        Task {
-            key: "neovim",
-            actions: vec![
-                Action::Command(brew_install("iterm2")),
-                Action::Command(brew_install("neovim")),
-                Action::Command(brew_install("lazygit")),
-                Action::Command(brew_install("bottom")),
-                Action::Command(brew_install("ripgrep")),
-                Action::Command(cargo_install("tree-sitter-cli")),
-            ],
-        }
-    }
-
-    fn asdf() -> Task {
-        Task {
-            key: "asdf",
-            actions: vec![
-                Action::Command(asdf_plugin_add("nodejs")),
-                Action::Command(asdf_plugin_add("erlang")),
-                Action::Command(asdf_plugin_add("elixir")),
-            ],
-        }
-    }
-
-    fn browsers() -> Task {
-        Task {
-            key: "browsers",
-            actions: vec![
-                Action::Command(brew_install("google-chrome")),
-                Action::Command(brew_install("chromium")),
-                Action::Command(brew_install("firefox")),
-            ],
-        }
-    }
-
-    fn apps() -> Task {
-        Task {
-            key: "apps",
-            actions: vec![
-                Action::Command(brew_install("spotify")),
-                Action::Command(brew_install("obsidian")),
-                Action::Command(brew_install("bitwarden")),
-            ],
-        }
-    }
-
-    fn starship() -> Task {
-        let mut path = UserDirs::new().unwrap().home_dir().to_path_buf();
-        path.push(".zshrc");
-
-        let x = "\neval \"$(starship init zsh)\"\n".to_owned();
-        Task {
-            key: "starship",
-            actions: vec![
-                Action::Command(brew_install("starship")),
-                Action::AppendToFile {
-                    content: x,
-                    file_path: path,
-                },
-            ],
-        }
-    }
-
-    fn font_fira_code_nerd_font() -> Task {
-        Task {
-            key: "font_fira_code_nerd_font",
-            actions: vec![
-                Action::Command(vec!["brew", "tap", "homebrew/cask-fonts"]),
-                Action::Command(brew_install("font-fira-code-nerd-font")),
-            ],
-        }
-    }
-
-    fn asdf_plugin_add(arg: &str) -> Vec<&str> {
-        vec!["asdf", "plugin", "add", arg]
-    }
-
-    fn cargo_install(arg: &str) -> Vec<&str> {
-        vec!["cargo", "install", arg]
-    }
-
-    fn brew_install(arg: &str) -> Vec<&str> {
-        vec!["brew", "install", arg]
-    }
+#[macro_export]
+macro_rules! s {
+    ($s:expr) => {
+        String::from($s)
+    };
 }
 
 mod ts {
@@ -205,8 +61,8 @@ mod ts {
         Task {
             key: "prettier",
             actions: vec![
-                Action::Command(npm_install_save_dev("prettier")),
-                Action::Command(npm_pkg_set("scripts.format=prettier --write src")),
+                npm_install_save_dev("prettier"),
+                npm_pkg_set("scripts.format=prettier --write src"),
             ],
         }
     }
@@ -215,19 +71,19 @@ mod ts {
         Task {
             key: "skooh",
             actions: vec![
-                Action::Command(npm_install_save_dev("skooh")),
-                Action::Command(npm_pkg_set("hooks.pre-commit=npm run format")),
-                Action::Command(npm_pkg_set("hooks.pre-push=npm run test")),
+                npm_install_save_dev("skooh"),
+                npm_pkg_set("hooks.pre-commit=npm run format"),
+                npm_pkg_set("hooks.pre-push=npm run test"),
             ],
         }
     }
 
-    fn npm_install_save_dev(arg: &str) -> Vec<&str> {
-        vec!["npm", "install", "--save-dev", arg]
+    fn npm_install_save_dev(arg: &str) -> Action {
+        Action::Command(vec![s!("npm"), s!("install"), s!("--save-dev"), s!(arg)])
     }
 
-    fn npm_pkg_set(arg: &str) -> Vec<&str> {
-        vec!["npm", "pkg", "set", arg]
+    fn npm_pkg_set(arg: &str) -> Action {
+        Action::Command(vec![s!("npm"), s!("pkg"), s!("set"), s!(arg)])
     }
 }
 
@@ -247,10 +103,11 @@ impl Namespace {
 
     fn to_clap_subcommand(&self) -> clap::Command {
         let subs: Vec<clap::Command> = self.tasks.iter().map(|t| t.to_clap_subcommand()).collect();
+
         clap::Command::new(self.key)
             .subcommand_required(true)
             .subcommands(subs)
-            .about(self.description)
+            .about(&self.description)
     }
 
     fn run(&self, arg_matches: &clap::ArgMatches) {
@@ -294,7 +151,7 @@ impl Task {
 #[derive(Clone)]
 enum Action {
     Task(Task),
-    Command(Vec<&'static str>),
+    Command(Vec<String>),
     /// ## Notes
     ///
     /// Whitespace is **not** implicitly applied to lines. Add it as desired to
