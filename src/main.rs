@@ -1,3 +1,10 @@
+use std::{
+    fs::{File, OpenOptions},
+    io::Write,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+};
+
 fn main() {
     let app = App {
         namespaces: vec![ts::namespace(), mac::namespace()],
@@ -31,6 +38,8 @@ impl App {
 }
 
 mod mac {
+    use directories::UserDirs;
+
     use crate::{Action, Namespace, Task};
 
     pub fn namespace() -> Namespace {
@@ -78,8 +87,8 @@ mod mac {
         Task {
             key: "tech",
             actions: vec![
-                Action::Command(brew_install("font-fira-code-nerd-font")),
-                Action::Command(brew_install("starship")),
+                Action::Task(starship()),
+                Action::Task(font_fira_code_nerd_font()),
                 Action::Command(brew_install("visual-studio-code")),
                 Action::Command(brew_install("lazygit")),
                 Action::Command(brew_install("lazydocker")),
@@ -137,6 +146,33 @@ mod mac {
                 Action::Command(brew_install("spotify")),
                 Action::Command(brew_install("obsidian")),
                 Action::Command(brew_install("bitwarden")),
+            ],
+        }
+    }
+
+    fn starship() -> Task {
+        let mut path = UserDirs::new().unwrap().home_dir().to_path_buf();
+        path.push(".zshrc");
+
+        let x = "\neval \"$(starship init zsh)\"\n".to_owned();
+        Task {
+            key: "starship",
+            actions: vec![
+                Action::Command(brew_install("starship")),
+                Action::AppendToFile {
+                    content: x,
+                    file_path: path,
+                },
+            ],
+        }
+    }
+
+    fn font_fira_code_nerd_font() -> Task {
+        Task {
+            key: "font_fira_code_nerd_font",
+            actions: vec![
+                Action::Command(vec!["brew", "tap", "homebrew/cask-fonts"]),
+                Action::Command(brew_install("font-fira-code-nerd-font")),
             ],
         }
     }
@@ -244,7 +280,7 @@ impl Task {
     }
 
     fn about(&self) -> String {
-        let init = String::from("runs the following commands:\n");
+        let init = format!("`{}` will run the following commands:\n", self.key);
         let mut about = self.actions.iter().fold(init, |mut acc, e| {
             let s = format!("\n{}", e.about());
             acc.push_str(&s);
@@ -259,6 +295,14 @@ impl Task {
 enum Action {
     Task(Task),
     Command(Vec<&'static str>),
+    /// ## Notes
+    ///
+    /// Whitespace is **not** implicitly applied to lines. Add it as desired to
+    /// `content`.
+    AppendToFile {
+        content: String,
+        file_path: PathBuf,
+    },
 }
 
 impl Action {
@@ -268,18 +312,41 @@ impl Action {
             Action::Command(command) => {
                 let cmd = command.first().expect("command should have command name");
                 let args = command[1..].to_vec();
-                std::process::Command::new(cmd)
+                let mut x = std::process::Command::new(cmd)
                     .args(args)
-                    .output()
+                    .spawn()
                     .expect("command should be a valid command and not error");
+
+                let y = x.wait().expect("child process should complete");
+                println!("process exited with exit status {y}");
+            }
+            Action::AppendToFile { content, file_path } => {
+                let mut file = OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open(file_path)
+                    .unwrap();
+                file.write_all(content.as_bytes()).unwrap();
             }
         }
     }
 
     fn about(&self) -> String {
         match self {
-            Action::Task(_) => todo!(),
+            Action::Task(t) => {
+                let mut s = format!("for sub-task {}:\n\n", t.key);
+                t.actions
+                    .iter()
+                    .for_each(|a| s.push_str(format!("  {}\n", a.about()).as_str()));
+                s.push_str("\n");
+                s
+            }
             Action::Command(v) => v.join(" "),
+            Action::AppendToFile { content, file_path } => {
+                let n = content.trim();
+                let p = file_path.to_str().unwrap();
+                format!("append to {p} : {n}")
+            }
         }
     }
 }
