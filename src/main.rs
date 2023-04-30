@@ -1,9 +1,10 @@
 use std::{
-    fs::{File, OpenOptions},
-    io::Write,
+    fs::OpenOptions,
+    io::{Read, Write},
     path::{Path, PathBuf},
-    process::{Command, Stdio},
 };
+
+use copypasta::ClipboardProvider;
 
 fn main() {
     let app = App {
@@ -152,14 +153,15 @@ impl Task {
 enum Action {
     Task(Task),
     Command(Vec<String>),
-    /// ## Notes
+    /// Append a line to a file **only if** the file does not already contain
+    /// that line.
     ///
-    /// Whitespace is **not** implicitly applied to lines. Add it as desired to
-    /// `content`.
-    AppendToFile {
-        content: String,
+    /// A new line is appended to the end of `line`
+    UniqueAppendLineToFile {
+        line: String,
         file_path: PathBuf,
     },
+    CopyToClipboard(String),
 }
 
 impl Action {
@@ -177,13 +179,13 @@ impl Action {
                 let y = x.wait().expect("child process should complete");
                 println!("process exited with exit status {y}");
             }
-            Action::AppendToFile { content, file_path } => {
-                let mut file = OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(file_path)
-                    .unwrap();
-                file.write_all(content.as_bytes()).unwrap();
+            Action::UniqueAppendLineToFile { line, file_path } => {
+                append_line_to_file_unless_present(line, file_path)
+            }
+            Action::CopyToClipboard(s) => {
+                let mut ctx = copypasta::ClipboardContext::new().unwrap();
+                ctx.set_contents(s!(s)).unwrap();
+                println!("\ncopied to clipboard : {s}\n");
             }
         }
     }
@@ -199,11 +201,52 @@ impl Action {
                 s
             }
             Action::Command(v) => v.join(" "),
-            Action::AppendToFile { content, file_path } => {
-                let n = content.trim();
+            Action::UniqueAppendLineToFile { line, file_path } => {
+                let n = line.trim();
                 let p = file_path.to_str().unwrap();
-                format!("append to {p} : {n}")
+                format!("append to {p} unless present : {n}")
+            }
+            Action::CopyToClipboard(s) => {
+                format!("copy to clipboard : {s}")
             }
         }
     }
+}
+
+fn append_line_to_file_unless_present(line: &str, file_path: &Path) {
+    let mut file = OpenOptions::new()
+        .read(true)
+        .append(true)
+        .open(file_path)
+        .unwrap();
+    let mut contents = String::from("");
+
+    file.read_to_string(&mut contents).unwrap();
+
+    if !contents.contains(line) {
+        file.write_all(format!("{line}\n").as_bytes()).unwrap();
+    };
+}
+
+#[test]
+fn test_append_line_to_file_unless_present() {
+    use assert_fs::prelude::*;
+    use assert_fs::NamedTempFile;
+    use predicates::prelude::*;
+    use std::fs;
+
+    let file = NamedTempFile::new("zshrc").unwrap();
+    fs::write(file.path(), "uno\ndos\n").unwrap();
+
+    append_line_to_file_unless_present("dos", file.path());
+    file.assert(predicate::str::contains("dos\n"));
+    file.assert(predicate::str::contains("dos\ndos").not());
+
+    append_line_to_file_unless_present("tres", file.path());
+    file.assert(predicate::str::contains("tres\n"));
+    file.assert(predicate::str::contains("tres\ntres").not());
+
+    append_line_to_file_unless_present("tres", file.path());
+    file.assert(predicate::str::contains("tres\n"));
+    file.assert(predicate::str::contains("tres\ntres").not());
 }
