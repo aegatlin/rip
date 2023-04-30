@@ -1,6 +1,9 @@
 # rip
 
-rip is a task runner
+`rip` is a (mostly personal) task runner.
+
+It is experimental, largely untested, and probably presumes a macos and zsh
+shell in multiple places. It's mostly a personal task runner.
 
 ## setup
 

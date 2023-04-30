@@ -47,46 +47,7 @@ macro_rules! s {
     };
 }
 
-mod ts {
-    use crate::{Action, Namespace, Task};
-
-    pub fn namespace() -> Namespace {
-        Namespace {
-            key: "ts",
-            description: "typescript",
-            tasks: vec![prettier(), skooh()],
-        }
-    }
-
-    fn prettier() -> Task {
-        Task {
-            key: "prettier",
-            actions: vec![
-                npm_install_save_dev("prettier"),
-                npm_pkg_set("scripts.format=prettier --write src"),
-            ],
-        }
-    }
-
-    fn skooh() -> Task {
-        Task {
-            key: "skooh",
-            actions: vec![
-                npm_install_save_dev("skooh"),
-                npm_pkg_set("hooks.pre-commit=npm run format"),
-                npm_pkg_set("hooks.pre-push=npm run test"),
-            ],
-        }
-    }
-
-    fn npm_install_save_dev(arg: &str) -> Action {
-        Action::Command(vec![s!("npm"), s!("install"), s!("--save-dev"), s!(arg)])
-    }
-
-    fn npm_pkg_set(arg: &str) -> Action {
-        Action::Command(vec![s!("npm"), s!("pkg"), s!("set"), s!(arg)])
-    }
-}
+mod ts;
 
 pub struct Namespace {
     key: &'static str,
