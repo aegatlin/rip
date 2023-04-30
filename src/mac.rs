@@ -40,6 +40,8 @@ fn git() -> Task {
             git_config_global("alias.br", "branch"),
             git_config_global("alias.st", "status"),
             git_config_global("alias.lol", "log --oneline"),
+            git_config_global("alias.l", "log --oneline -n5"),
+            git_config_global("alias.ll", "log --oneline -n10"),
             git_config_global("alias.c", "commit"),
             git_config_global("alias.cane", "commit --amend --no-edit"),
             git_config_global("alias.cm", "commit -m"),
