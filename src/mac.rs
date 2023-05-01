@@ -36,7 +36,7 @@ fn git() -> Task {
         actions: vec![
             brew_install("git"),
             brew_install("lazygit"),
-            brew_install("gh"),
+            gh(),
             git_config_global("pull.rebase", "true"),
             git_config_global("user.name", "Austin Gatlin"),
             git_config_global("user.email", "austin@gatlin.io"),
@@ -52,6 +52,22 @@ fn git() -> Task {
             git_config_global("alias.ap", "add -p"),
         ],
     }
+}
+
+fn gh() -> Action {
+    Action::Task(Task {
+        key: "gh",
+        actions: vec![
+            brew_install("gh"),
+            Action::Command(vec![
+                s!("gh"),
+                s!("config"),
+                s!("set"),
+                s!("editor"),
+                s!("vim"),
+            ]),
+        ],
+    })
 }
 
 fn brew() -> Task {

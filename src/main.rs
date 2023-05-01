@@ -159,11 +159,10 @@ impl Action {
     fn about(&self) -> String {
         match self {
             Action::Task(t) => {
-                let mut s = format!("for sub-task {}:\n\n", t.key);
+                let mut s = format!("sub-task {}:\n", t.key);
                 t.actions
                     .iter()
-                    .for_each(|a| s.push_str(format!("  {}\n", a.about()).as_str()));
-                s.push_str("\n");
+                    .for_each(|a| s.push_str(format!("> {}\n", a.about()).as_str()));
                 s
             }
             Action::Command(v) => v.join(" "),
