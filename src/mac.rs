@@ -12,6 +12,7 @@ pub fn namespace() -> Namespace {
             brew(),
             comms(),
             tech(),
+            vim(),
             neovim(),
             asdf(),
             browsers(),
@@ -102,6 +103,19 @@ fn tech() -> Task {
     }
 }
 
+fn vim() -> Task {
+    let mut vim_path = home_path();
+    vim_path.push(".vim");
+
+    Task {
+        key: "vim",
+        actions: vec![
+            brew_install("vim"),
+            git_clone(vec![], "git@github.com:aegatlin/dotvim.git", &vim_path),
+        ],
+    }
+}
+
 fn neovim() -> Task {
     let mut astro_nvim_path = home_path();
     astro_nvim_path.push(".config/nvim");
@@ -121,12 +135,12 @@ fn neovim() -> Task {
             cargo_install("tree-sitter-cli"),
             git_clone(
                 vec![s!("--depth"), s!("1")],
-                "https://github.com/AstroNvim/AstroNvim",
+                "git@github.com:AstroNvim/AstroNvim.git",
                 &astro_nvim_path,
             ),
             git_clone(
                 vec![],
-                "https://github.com/aegatlin/astronvim_config.git",
+                "git@github.com:aegatlin/astronvim_config.git",
                 &astro_nvim_lua_user_path,
             ),
         ],
@@ -150,8 +164,7 @@ fn asdf() -> Task {
 }
 
 fn git_clone(clone_opts: Vec<String>, remote: &str, destination: &Path) -> Action {
-    let dest_canon = destination.canonicalize().unwrap();
-    let dest_str = dest_canon.to_str().unwrap();
+    let dest_str = destination.to_str().unwrap();
     let cmd = [
         vec![s!("git"), s!("clone")],
         clone_opts,
