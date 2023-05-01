@@ -1,4 +1,5 @@
 use std::{
+    env,
     fs::OpenOptions,
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -123,6 +124,7 @@ enum Action {
         file_path: PathBuf,
     },
     CopyToClipboard(String),
+    ChangeDir(PathBuf),
 }
 
 impl Action {
@@ -132,13 +134,13 @@ impl Action {
             Action::Command(command) => {
                 let cmd = command.first().expect("command should have command name");
                 let args = command[1..].to_vec();
-                let mut x = std::process::Command::new(cmd)
+                let mut child = std::process::Command::new(cmd)
                     .args(args)
                     .spawn()
                     .expect("command should be a valid command and not error");
 
-                let y = x.wait().expect("child process should complete");
-                println!("process exited with exit status {y}");
+                let child_exit_status = child.wait().expect("child process should complete");
+                println!("rip log: child process exit status: {child_exit_status}");
             }
             Action::UniqueAppendLineToFile { line, file_path } => {
                 append_line_to_file_unless_present(line, file_path)
@@ -146,7 +148,10 @@ impl Action {
             Action::CopyToClipboard(s) => {
                 let mut ctx = copypasta::ClipboardContext::new().unwrap();
                 ctx.set_contents(s!(s)).unwrap();
-                println!("\ncopied to clipboard : {s}\n");
+                println!("rip log: copied to clipboard: {s}\n");
+            }
+            Action::ChangeDir(path) => {
+                env::set_current_dir(path).unwrap();
             }
         }
     }
@@ -169,6 +174,9 @@ impl Action {
             }
             Action::CopyToClipboard(s) => {
                 format!("copy to clipboard : {s}")
+            }
+            Action::ChangeDir(path) => {
+                format!("change dir to : {}", path.to_str().unwrap())
             }
         }
     }

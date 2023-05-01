@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
 
 use directories::UserDirs;
 
@@ -106,12 +109,19 @@ fn tech() -> Task {
 fn vim() -> Task {
     let mut vim_path = home_path();
     vim_path.push(".vim");
+    let app_root_path = env::current_dir().unwrap();
+    let mut vim_path = home_path();
+    vim_path.push(".vim");
 
     Task {
         key: "vim",
         actions: vec![
             brew_install("vim"),
             git_clone(vec![], "git@github.com:aegatlin/dotvim.git", &vim_path),
+            Action::ChangeDir(vim_path),
+            Action::Command(vec![s!("git"), s!("submodule"), s!("init")]),
+            Action::Command(vec![s!("git"), s!("submodule"), s!("update")]),
+            Action::ChangeDir(app_root_path),
         ],
     }
 }
