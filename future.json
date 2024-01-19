@@ -1,0 +1,104 @@
+{
+  "mac": {
+    "description": "tasks for setting up a macos machine",
+    "actions": {
+      "git": [
+        "brew install git",
+        "brew install lazygit",
+        "brew install gh",
+        "gh config set editor vim",
+        "git config --global pull.rebase true",
+        "git config --global init.branch main",
+        "git config --global user.name Austin Gatlin",
+        "git config --global user.email austin@gatlin.io",
+        "git config --global alias.co checkout",
+        "git config --global alias.br branch",
+        "git config --global alias.st status",
+        "git config --global alias.lol log --oneline",
+        "git config --global alias.l log --oneline -n5",
+        "git config --global alias.ll log --oneline -n10",
+        "git config --global alias.c commit",
+        "git config --global alias.cane commit --amend --no-edit",
+        "git config --global alias.cm commit -m",
+        "git config --global alias.ap add -p"
+      ],
+      "comms": [
+        "brew install slack",
+        "brew install discord",
+        "brew install signal",
+        "brew install telegram",
+        "brew install zoom"
+      ],
+      "apps": [
+        "brew install spotify",
+        "brew install obsidian",
+        "brew install bitwarden"
+      ],
+      "tech": [
+        "brew install visual-studio-code",
+        "brew install tree",
+        "brew install wireshark",
+        "brew install redis",
+        "brew install starship",
+        "echo \"eval \"$(starship init zsh)\"\" >> ~/.zshrc",
+        "brew tap homebrew/cask-fonts",
+        "brew install font-fira-code-nerd-font"
+      ],
+      "vim": [
+        "brew install vim",
+        "git clone git@github.com:aegatlin/dotvim.git ~/.vim/",
+        "pushd ~/.vim/",
+        "git submodule init",
+        "git submodule update",
+        "popd"
+      ],
+      "neovim": [
+        "brew install git",
+        "brew install iterm2",
+        "brew install neovim",
+        "brew install lazygit",
+        "brew install bottom",
+        "brew install ripgrep",
+        "brew install tree-sitter-cli",
+        "git clone --depth 1 git@github.com:AstroNvim/AstroNvim.git ~/.config/nvim",
+        "git clone git@github.com:aegatlin/astronvim_config.git ~/.config/nvim/lua/user"
+      ],
+      "browsers": [
+        "brew install google-chrome",
+        "brew install chromium",
+        "brew install firefox"
+      ],
+      "asdf": [
+        "brew install coreutils",
+        "brew install curl",
+        "brew install git",
+        "brew install asdf",
+        "echo \". /usr/local/opt/asdf/libexec/asdf.sh\" >> ~/.zshrc"
+      ]
+    }
+  },
+  "ts": {
+    "description": "tasks for preparing typescript projects",
+    "actions": {
+      "vite": [
+        "ts._nodejs_lts",
+        "npm create vite@latest .",
+        "npm install --save-dev vitest",
+        "npm pkg set scripts.test=vitest"
+      ],
+      "next": [
+        "ts._nodejs_lts",
+        "npx create-next-app@latest ."
+      ],
+      "prettier": [
+        "npm install --save-dev prettier",
+        "npm install --save-dev prettier-plugin-tailwindcss",
+        "npm pkg set scripts.format=prettier --write src"
+      ],
+      "_nodejs_lts": [
+        "asdf install nodejs lts",
+        "asdf local nodejs lts"
+      ]
+    }
+  }
+}
